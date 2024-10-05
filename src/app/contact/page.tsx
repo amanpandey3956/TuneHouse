@@ -9,6 +9,7 @@ function MusicSchoolContactUs() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const apiKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
 
     // Send form data to Web3Forms API
     const res = await fetch('https://api.web3forms.com/submit', {
@@ -17,7 +18,7 @@ function MusicSchoolContactUs() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        access_key: '3f3c4661-2b40-4b4f-9cb8-ef74e6a3e4e1', // Replace with your Web3Forms access key
+        access_key: apiKey, 
         email: email,
         message: message,
       }),
