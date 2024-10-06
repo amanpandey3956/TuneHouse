@@ -4,45 +4,56 @@ import { BackgroundBeams } from '@/components/ui/background-beams';
 
 function MusicSchoolContactUs() {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState(''); // Added name state
   const [message, setMessage] = useState('');
-  const [submitted, setSubmitted] = useState(false); // New state for form submission status
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget); // Use event.currentTarget for better type safety
     const apiKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+
+    if (apiKey) {
+      // Append API key to form data only if it exists
+      formData.append('access_key', apiKey);
+    } else {
+      console.error('API key is not defined');
+      setErrorMessage('API key is not configured.');
+      return;
+    }
+
+    const object = Object.fromEntries(formData);
+    const json = JSON.stringify(object);
 
     // Send form data to Web3Forms API
     const res = await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-         Accept: "application/json",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
-      body: JSON.stringify({
-        access_key: apiKey, 
-        email: email,
-        message: message,
-      }),
+      body: json,
     });
 
-    if (res.ok) {
-      setSubmitted(true); // Set form submission status
-      setEmail(''); // Clear form fields
-      setMessage('');
-      console.log('Email sent successfully');
+    const result = await res.json();
+    if (res.ok && result.success) {
+      setSubmitted(true);
+      setName(''); // Clear name field
+      setEmail(''); // Clear email field
+      setMessage(''); // Clear message field
+      setErrorMessage(''); // Clear any error message
+      console.log('Email sent successfully:', result);
     } else {
-      console.error('Failed to send email');
+      console.error('Failed to send email:', result);
+      setErrorMessage(result.message || 'Failed to send message. Please try again.');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-36 relative">
-      {/* Ensure the container is relative */}
-      {/* BackgroundBeams with adjusted z-index */}
       <BackgroundBeams className="absolute top-0 left-0 w-full h-full z-0" />
-      {/* Content with higher z-index */}
       <div className="max-w-2xl mx-auto p-4 relative z-10">
-        {/* Add relative and z-10 to bring content to the front */}
         <h1 className="text-lg md:text-7xl text-center font-sans font-bold mb-8 text-white">
           Contact Us
         </h1>
@@ -52,12 +63,22 @@ function MusicSchoolContactUs() {
           in your musical journey.
         </p>
 
-        {submitted ? ( // Display thank you message if form is submitted
+        {submitted ? (
           <p className="text-center text-green-500">Thank you! Your message has been sent.</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="rounded-lg border border-neutral-800 focus:ring-2 focus:ring-teal-500 w-full p-4 bg-neutral-950 placeholder:text-neutral-700"
+              required
+            />
+            <input
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your email address"
@@ -65,6 +86,7 @@ function MusicSchoolContactUs() {
               required
             />
             <textarea
+              name="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Your message"
@@ -78,6 +100,7 @@ function MusicSchoolContactUs() {
             >
               Send Message
             </button>
+            {errorMessage && <p className="text-red-500 text-center">{errorMessage}</p>} {/* Display error message */}
           </form>
         )}
       </div>
